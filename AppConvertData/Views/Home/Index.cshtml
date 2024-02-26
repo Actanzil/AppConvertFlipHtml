@@ -1,0 +1,153 @@
+﻿@using System.IO
+@using System.Text.RegularExpressions
+@{
+    ViewData["Title"] = "Home";
+    var wwwRootPath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+}
+
+<div class="container mb-2">
+    <div class="text-center">
+        <h1 class="display-4">Converter PDF to HTML Flipbook</h1>
+    </div>
+    @if (TempData["Notification"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Notification"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @using (Html.BeginForm("ExportToImage", "Home", FormMethod.Post, new { enctype = "multipart/form-data", @class = "needs-validation", novalidate = "novalidate", id = "conversionForm" }))
+    {
+        <div class="mb-3">
+            <label for="pdfFile" class="form-label">Unggah file PDF:</label>
+            <div class="input-group">
+                <input type="file" class="form-control" name="pdfFile" id="inputGroupFile04" aria-describedby="inputGroupFileAddon04" aria-label="Upload" accept=".pdf" required />
+                <button type="submit" class="btn" style="background-color: #317AFC; color: #fff;" id="inputGroupFileAddon04">
+                    <span class="spinner-border spinner-border-sm" aria-hidden="true" style="display:none;" id="spinner"></span>
+                    <span id="buttonText">Konversi</span>
+                </button>
+            </div>
+        </div>
+    }
+
+    <div class="">
+        @if (Model != null && Model.Count > 0)
+        {
+            <h5>Hasil Konversi</h5>
+            <div class="row row-cols-1 row-cols-md-5 gy-4">
+
+                @foreach (var filePath in Model)
+                {
+                    var fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(filePath);
+                    var subfolderName = System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(filePath));
+                    var previewImageUrl = Url.Content($"~/Output/{subfolderName}/packages/pages/1.jpeg");
+                    var pagesFolderPath = System.IO.Path.Combine(wwwRootPath, "Output", subfolderName, "packages", "pages");
+                    var imageFiles = Directory.GetFiles(pagesFolderPath);
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-img">
+                                <img src="@Html.Encode(previewImageUrl)" class="card-img-top">
+                            </div>
+                            <div class="card-body card-convert-file">
+                                <a href="~/Output/@subfolderName/index.html" class="btn btn-primary" target="_blank" title="Review File"><i class="bi bi-eye-fill" style="color: #FFF"></i></a>
+                                <a href="~/Home/DownloadFile?subfolderName=@subfolderName" class="btn btn-success" title="Unduh File"><i class="bi bi-file-earmark-arrow-down-fill" style="color: #FFF"></i></a>
+                                <a href="#" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#customize_@subfolderName" title="Kustom File"><i class="bi bi-gear-fill" style="color: #FFF"></i></a>
+                                <a href="#" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteFile_@subfolderName" title="Hapus File"><i class="bi bi-trash-fill" style="color: #FFF"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal Customize -->
+                    <div class="modal fade" id="customize_@subfolderName" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="staticBackdropLabel">Pilih halaman yang akan di kustom</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="container-fluid">
+                                        <div class="gallery min-vh-100">
+                                            <div class="row g-4">
+                                                @{
+                                                    List<string> imageFilesList = new List<string>(imageFiles);
+                                                    imageFilesList.Sort((a, b) =>
+                                                    {
+                                                        
+                                                        string fileNameA = System.IO.Path.GetFileNameWithoutExtension(a);
+                                                        string fileNameB = System.IO.Path.GetFileNameWithoutExtension(b);
+
+                                                        int numberA, numberB;
+                                                        bool successA = int.TryParse(fileNameA, out numberA);
+                                                        bool successB = int.TryParse(fileNameB, out numberB);
+                                                        
+                                                        if (successA && successB)
+                                                        {
+                                                            return numberA.CompareTo(numberB);
+                                                        }
+                                                        else
+                                                        {
+                                                            return string.Compare(fileNameA, fileNameB);
+                                                        }
+                                                    });
+                                                }
+                                                @foreach (var file in imageFilesList)
+                                                {
+                                                    var fileName = System.IO.Path.GetFileName(file);
+                                                    var imageUrl = Url.Content($"~/Output/{subfolderName}/packages/pages/{fileName}");
+                                                    var imageUrlWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(file);
+
+                                                    <div class="gallery-item col-xl-3 col-lg-4 col-md-6">
+                                                        <a href="@Url.Action("Customize", "Home", new { subfolderName = subfolderName, fileName = fileName })">
+                                                            <img src="@imageUrl" class="img-fluid item-image" data-fileName="@fileName" alt="@fileName">
+                                                        </a>
+                                                    </div>
+                                                }
+
+                                            </div>
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Modal Delete -->
+                    <div class="modal fade" id="deleteFile_@subfolderName" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header" style="border-color: #fff;">
+                                    <h1 class="modal-title fs-5" id="staticBackdropLabel">Konfirmasi Hapus File</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body" style="border-color: #fff;">
+                                    Anda yakin akan menghapus file ini?
+                                </div>
+                                <div class="modal-footer" style="border-color: #fff;">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                                    <a href="~/Home/DeleteFile?subfolderName=@subfolderName" class="btn btn-danger" title="Hapus File"><i class="bi bi-trash-fill" style="color: #FFF"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                }
+            </div>
+        }
+        else
+        {
+            <p>Tidak ada file</p>
+        }
+    </div>
+
+</div>

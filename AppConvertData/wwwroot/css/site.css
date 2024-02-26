@@ -1,0 +1,88 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+.card-img {
+    overflow: hidden;
+    max-height: 300px;
+}
+
+.card-img-top {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    object-position: center;
+}
+
+.card-convert-file {
+    text-align: center;
+}
+
+    .card-convert-file .btn {
+        margin: 2px;
+    }
+
+.download-link.loading .bi {
+    display: none;
+}
+
+.download-link.loading .spinner-grow {
+    display: inline-block;
+}
+
+.gallery {
+    padding: 10px 0;
+}
+
+.gallery .item-image {
+    box-shadow: 0 3px 20px -2px #808080;
+}
+
+.content {
+    background-color: #f6f9ff;
+    padding: 40px;
+}
+
+.modal-customize {
+    padding: 20px;
+}
+
+.modal-customize p {
+    margin-bottom: 15px;
+}
+
+.modal-customize ul {
+    padding-left: 20px;
+    margin-bottom: 15px;
+}
+
+.modal-customize li {
+    margin-bottom: 8px;
+}
+
+.modal-customize cite {
+    font-style: italic;
+}
+
+.modal-customize strong {
+    font-weight: bold;
+}

@@ -1,0 +1,488 @@
+﻿@{
+    ViewData["Title"] = "Customize";
+    var wwwRootPath = ViewData["WwwRootPath"] as string;
+    var subfolderName = ViewData["SubfolderName"] as string;
+}
+
+<div class="container">
+    @if (!string.IsNullOrEmpty(ViewBag.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @ViewBag.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @ViewBag.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    <div class="card o-hidden border-0 shadow-lg my-5">
+        <div class="card-body p-0">
+            <div class="row">
+                <div class="col-lg-4 d-none d-lg-block">
+                    <div class="annotation-container position-relative">
+                        <img src="@Url.Content(ViewBag.ImagePath)" alt="Image" class="img-fluid image-coordinate position-relative" style="z-index: 0;" />
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="mt-3 d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button class="btn btn-secondary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#modal_guide" style="color: #FFF;"><i class="bi bi-info-square-fill"></i></button>
+                        <a asp-action="Index" asp-controller="Home" class="btn btn-warning btn-sm me-md-3" type="button" style="color: #FFF;">Kembali</a>
+
+                        <!-- Modal Guide -->
+                        <div class="modal fade" id="modal_guide" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h1 class="modal-title fs-5" id="staticBackdropLabel">Panduan Menggunakan Tools</h1>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body modal-customize">
+                                        <p>Berikut adalah panduan untuk menggunakan tools untuk proses kustom penambahan elemen video pada halaman terpilih :</p>
+                                        <ul>
+                                            <li>Mulailah dengan menentukan titik awal koordinat dan klik sekali pada titik tersebut.</li>
+                                            <li>Tentukan titik-titik lain sesuai kebutuhan dengan klik sekali pada setiap titik.</li>
+                                            <li>Jika sudah selesai, arahkan pointer kembali ke titik awal dan lakukan klik 2 kali.</li>
+                                            <li>Setelah berhasil menemukan koordinat, unggah video dengan ukuran maksimal 100Mb pada kolom yang disediakan.</li>
+                                            <li>Klik "Simpan Kustom" untuk menyimpan hasil, atau jika ingin mengukur ulang titik koordinat, klik "Reset Kustom".</li>
+                                        </ul>
+                                        <p><cite>Perlu diperhatikan</cite>, anda hanya dapat melakukan kustom 
+                                            <strong>sekali saja</strong> pada satu halaman. Jika anda ingin melakukan kustom ulang, anda dapat 
+                                            <strong> menghapus </strong> hasil kustom awal anda.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <form class="row g-3" action="/Home/SaveCoordinates?subfolderName=@ViewData["SubfolderName"]" method="post" enctype="multipart/form-data">
+                            <input hidden type="text" name="imageName" value="@ViewData["FileNameWithoutExtension"]" />
+
+                            <div class="col-md-6">
+                                <label for="inputEmail4" class="form-label">Koordinat X</label>
+                                <input type="text" class="form-control" id="floatingPlaintextInputX" name="xCoordinate" value="" required readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="inputPassword4" class="form-label">Koordinat Y</label>
+                                <input type="text" class="form-control" id="floatingPlaintextInputY" name="yCoordinate" value="" required readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="inputEmail4" class="form-label">Width</label>
+                                <input type="text" class="form-control" id="floatingPlaintextInputWidth" name="widthCoordinate" value="" required readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="inputPassword4" class="form-label">Height</label>
+                                <input type="text" class="form-control" id="floatingPlaintextInputHeight" name="heightCoordinate" value="" required readonly>
+                            </div>
+                            <div class="col-12">
+                                <label for="formFile" class="form-label">Unggah Video Anda</label>
+                                <span class="text-danger" style="font-weight:lighter;font-size:12px">
+                                    *Ukuran maksimal video adalah 100Mb
+                                </span>
+                                <input class="form-control" type="file" name="videoFile" type="file" accept=".mp4" required onchange="checkFileSize(this)">
+                                <div id="fileSizeMessage" style="color: red;"></div>
+                            </div>
+                            <div class="col-12">
+                                <button id="btn-clear-coordinates" class="btn btn-warning" style="color: #FFF; display: none;" onclick="hideButtons(event)">Reset Koordinat</button>
+                                <button id="btn-save" type="submit" class="btn btn-success" style="color: #FFF; display: none;">Tetapkan Kustom</button>
+                                <div id="imageSize" style="display: none;"></div>
+                                <div id="formNotification" class="d-inline-block"></div>
+                            </div>
+                        </form>
+
+                        @if (!string.IsNullOrEmpty(ViewData["RegionsFilePath"] as string) && !string.IsNullOrEmpty(ViewData["VideoFilePath"] as string))
+                        {
+                            <div class="d-flex flex-row bd-highlight mb-3">
+                                <div class="p-2 bd-highlight">Log Aktivitas Terakhir Anda :</div>
+                                <div class="p-2 bd-highlight">@((DateTime)ViewData["VideoCreationTime"])</div>
+                                <div class="p-2 bd-highlight">
+                                    <form id="deleteForm" method="post" action="/Home/DeleteFiles" class="form-inline">
+                                        <input type="hidden" name="subfolderName" value="@ViewData["SubfolderName"]" />
+                                        <input type="hidden" name="fileNameWithoutExtension" value="@ViewData["FileNameWithoutExtension"]" />
+                                        <button type="submit" name="deleteOption" value="both" onclick="confirmDelete()" class="btn btn-danger btn-sm" title="Hapus Log" style="color: #FFF;"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                        }
+                        else
+                        {
+                            <p>Tidak ada log aktivitas.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var regionsFilePath = '@ViewData["RegionsFilePath"]';
+            var videoFilePath = '@ViewData["VideoFilePath"]';
+
+            if (regionsFilePath && videoFilePath) {
+                disableAnnotationFunctionality();
+            }
+        });
+
+        function disableAnnotationFunctionality() {
+            $.fn.annotation = function (options) {
+                console.log("Fungsi anotasi dinonaktifkan.");
+            };
+
+            $('#btn-clear-coordinates').hide();
+
+            $('#btn-save').hide();
+
+            $('#formNotification').html('<p>Anotasi tidak tersedia, Hapus dulu log aktivitas anda sebelumnya.</p>');
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            $('.annotation-container').each(function () {
+                $(this).annotation({
+                    image: $(this).data('image'),
+                    fileName: $(this).data('fileName'),
+                    editable: true,
+                    hiddenInputId: 'annotationsJSON'
+                });
+            });
+
+            measureImageSize();
+        });
+
+        function checkFileSize(input) {
+            const maxSizeMB = 100;
+            if (input.files.length > 0) {
+                const fileSizeMB = input.files[0].size / (1024 * 1024);
+                const fileSizeMessage = document.getElementById("fileSizeMessage");
+                if (fileSizeMB > maxSizeMB) {
+                    fileSizeMessage.innerText = "Ukuran file terlalu besar, Maksimal 100Mb.";
+                    input.value = "";
+                } else {
+                    fileSizeMessage.innerText = "";
+                }
+            }
+        }
+
+        function measureImageSize() {
+            
+            var img = document.querySelector('.image-coordinate');
+            var canvas = document.getElementById('annotation-canvas');
+           
+            var width = img.width;
+            var height = img.height;
+          
+            var sizeInfo = "Ukuran Gambar: " + width + " x " + height;
+            document.getElementById('imageSize').innerText = sizeInfo;
+
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        $.fn.annotation = function (options) {
+            var annotations = [];
+            var annIdxEditing = -1;
+            var hiddenInputId = $('#' + options.hiddenInputId);
+            var annotationDiv = $(this);
+            var isDialogOpen = false;
+            var isCoordinateSet = false;
+            var coordinatesStorage = [];
+
+            preventSelectionOnDbClick(annotationDiv);
+
+            var img = $('<img>');
+            img.attr('src', options.image);
+            img.css('position', 'absolute');
+            preventSelectionOnDbClick(img);
+            img.appendTo(this);
+
+            var canvas = $('<canvas id="annotation-canvas" class="position-absolute top-0 start-0" style="z-index: 1;"></canvas>');
+            canvas.appendTo(this);
+
+            img.on('load', function () {
+                var canvasWidth = img.width();
+                var canvasHeight = img.height();
+
+                var aspectRatio = this.width / this.height;
+                if (aspectRatio > canvasWidth / canvasHeight) {
+                    img.css('height', canvasHeight);
+                    img.css('width', canvasHeight * aspectRatio);
+                } else {
+                    img.css('width', canvasWidth);
+                    img.css('height', canvasWidth / aspectRatio);
+                }
+
+                canvas.attr('width', canvasWidth);
+                canvas.attr('height', canvasHeight);
+
+            });
+
+            canvas.qtip({
+                content: {
+                    text: ''
+                },
+                position: {
+                    target: 'mouse',
+                    adjust: { x: 5, y: 5 }
+                },
+                style: {
+                    classes: 'qtip-annotation'
+                }
+            });
+
+            $('.qtip-annotation').hide();
+
+            if (options.editable) {
+                canvas.click(function (e) {
+                    if (annIdxEditing == -1) {
+                        annIdxEditing = annotations.length;
+                        annotations[annIdxEditing] = {
+                            path: [],
+                            text: ''
+                        };
+                    }
+
+                    var p = getMousePosOnCanvas($(this), e);
+                    annotations[annIdxEditing].path.push(p);
+                    annotations[annIdxEditing].path.push(p);
+                    renderAnnotations($(this), annotations);
+                });
+
+                canvas.dblclick(function (e) {
+                    if (annIdxEditing != -1) {
+                        var p = getMousePosOnCanvas($(this), e);
+                        annotations[annIdxEditing].path.push(p);
+                        annotations[annIdxEditing].path.push(annotations[annIdxEditing].path[0]);
+
+                        annIdxEditing = -1;
+
+                        renderAnnotations($(this), annotations);
+
+                        showTxtDialog();
+                    }
+                });
+            }
+
+            canvas.mousemove(function (e) {
+                var p = getMousePosOnCanvas($(this), e);
+
+                if (annIdxEditing != -1) {
+                    var lastItem = annotations[annIdxEditing].path.length - 1;
+                    annotations[annIdxEditing].path[lastItem] = p;
+                    renderAnnotations($(this), annotations);
+                }
+
+                showQtipIfPointInPath($(this), p);
+
+            });
+
+            function renderAnnotations(canvas, annotations) {
+                var ctx = canvas.get(0).getContext("2d");
+                ctx.clearRect(0, 0, canvas.get(0).width, canvas.get(0).height);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.strokeStyle = '#ffcc33';
+                ctx.lineWidth = 2;
+
+                for (var i = 0; i < annotations.length; i++) {
+                    var path = annotations[i].path;
+
+                    ctx.beginPath();
+                    ctx.moveTo(path[0].x, path[0].y);
+                    for (var j = 1; j < path.length; j++) {
+                        ctx.lineTo(path[j].x, path[j].y);
+                    }
+                    ctx.fill();
+                    ctx.stroke();
+                }
+            }
+
+            function showQtipIfPointInPath(point) {
+                var shouldBeVisible = false;
+                if ((!isDialogOpen) && (annIdxEditing == -1)) {
+                    var ctx = canvas.get(0).getContext("2d");
+
+                    for (var i = 0; i < annotations.length; i++) {
+                        var path = annotations[i].path;
+
+                        ctx.beginPath();
+                        ctx.moveTo(path[0].x, path[0].y);
+                        for (var j = 1; j < path.length; j++) {
+                            ctx.lineTo(path[j].x, path[j].y);
+                        }
+
+                        if (ctx.isPointInPath(point.x, point.y)) {
+                            shouldBeVisible = true;
+                            var textContent = annotations[i].text;
+
+                            if (textContent !== undefined) {
+                                textContent = textContent.replace(/\n/g, "<br>");
+                            }
+                            canvas.qtip('option', 'content.text', textContent);
+                        }
+                    }
+                }
+
+                if (shouldBeVisible) {
+                    $('.qtip-annotation').show();
+                } else {
+                    $('.qtip-annotation').hide();
+                }
+            }
+
+
+            function showTxtDialog() {
+                if (!isCoordinateSet) {
+                    var lastPath = annotations[annotations.length - 1].path;
+                    var minX = Math.min(...lastPath.map(p => p.x));
+                    var minY = Math.min(...lastPath.map(p => p.y));
+                    var maxX = Math.max(...lastPath.map(p => p.x));
+                    var maxY = Math.max(...lastPath.map(p => p.y));
+                    var width = maxX - minX;
+                    var height = maxY - minY;
+
+                    var logOutput = {
+                        "x": minX,
+                        "y": minY,
+                        "width": width,
+                        "height": height
+                    };
+
+                    $('#floatingPlaintextInputX').val(minX);
+                    $('#floatingPlaintextInputY').val(minY);
+                    $('#floatingPlaintextInputWidth').val(width);
+                    $('#floatingPlaintextInputHeight').val(height);
+
+                    coordinatesStorage.push(logOutput);
+
+                    console.log(logOutput);
+                    $('#consoleLog').html(JSON.stringify(logOutput, null, 2));
+
+                    isCoordinateSet = true;
+
+                    isDialogOpen = false;
+                } else {
+                    console.log("Koordinat sudah ditetapkan sebelumnya.");
+                }
+
+                console.log(coordinatesStorage);
+            }
+
+            function saveTxtForLastAnnotation(txt) {
+                annotations[annotations.length - 1].text = txt;
+                renderAnnotations(canvas, annotations);
+            }
+
+            function cancelLastAnnotation() {
+                annotations.pop();
+                renderAnnotations(canvas, annotations);
+            }
+
+            function preventSelectionOnDbClick(element) {
+                element.css('-moz-user-select', 'none');
+                element.css('-khtml-user-select', 'none');
+                element.css('-webkit-user-select', 'none');
+                element.css('-o-user-select', 'none');
+                element.css('user-select', 'none');
+            }
+
+            function getMousePosOnCanvas(canvas, evt) {
+                var rect = canvas.get(0).getBoundingClientRect();
+                var scaleX = canvas.get(0).width / rect.width;
+                var scaleY = canvas.get(0).height / rect.height;
+                var p = {
+                    x: (evt.pageX - rect.left) * scaleX,
+                    y: (evt.pageY - rect.top) * scaleY
+                };
+                return p;
+            }
+
+            function clearCoordinates() {
+                $('#floatingPlaintextInputX').val('');
+                $('#floatingPlaintextInputY').val('');
+                $('#floatingPlaintextInputWidth').val('');
+                $('#floatingPlaintextInputHeight').val('');
+
+                annotations = [];
+                annIdxEditing = -1;
+
+                renderAnnotations(canvas, annotations);
+
+                console.log("Koordinat telah dihapus.");
+
+                isCoordinateSet = false;
+            }
+
+            $('#btn-clear-coordinates').click(function () {
+                clearCoordinates();
+            });
+        }
+
+        function checkInputValues() {
+            var xValue = document.getElementById('floatingPlaintextInputX').value.trim();
+            var yValue = document.getElementById('floatingPlaintextInputY').value.trim();
+            var widthValue = document.getElementById('floatingPlaintextInputWidth').value.trim();
+            var heightValue = document.getElementById('floatingPlaintextInputHeight').value.trim();
+            var videoFileInput = document.querySelector('input[name="videoFile"]');
+            var btnSave = document.getElementById('btn-save');
+            var btnClear = document.getElementById('btn-clear-coordinates');
+
+            if (videoFileInput.files.length > 0 && xValue !== '' && yValue !== '' && widthValue !== '' && heightValue !== '') {
+                btnSave.style.display = 'inline-block';
+                btnClear.style.display = 'inline-block';
+            } else if (xValue === '' && yValue === '' && widthValue === '' && heightValue === '') { 
+                btnSave.style.display = 'none';
+                btnClear.style.display = 'none';
+            } else {
+                btnSave.style.display = 'none';
+                btnClear.style.display = 'inline-block';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var inputs = document.querySelectorAll('input[id^="floatingPlaintextInput"]');
+            inputs.forEach(function (input) {
+                input.addEventListener('input', checkInputValues);
+            });
+
+            var videoFileInput = document.querySelector('input[name="videoFile"]');
+            videoFileInput.addEventListener('change', checkInputValues);
+        });
+
+        function checkFileSize(input) {
+            const maxSizeMB = 100;
+            if (input.files.length > 0) {
+                const fileSizeMB = input.files[0].size / (1024 * 1024);
+                const fileSizeMessage = document.getElementById("fileSizeMessage");
+                if (fileSizeMB > maxSizeMB) {
+                    fileSizeMessage.innerText = "Ukuran file terlalu besar, Maksimal 100Mb.";
+                    input.value = "";
+                } else {
+                    fileSizeMessage.innerText = "";
+                }
+            }
+        }
+
+        function hideButtons(event) {
+            event.preventDefault();
+
+            document.getElementById('btn-save').style.display = 'none';
+            document.getElementById('btn-clear-coordinates').style.display = 'none';
+        }
+
+        function confirmDelete() {
+            var result = confirm("Apakah Anda yakin ingin menghapus log?");
+
+            if (result) {
+                document.getElementById("deleteForm").submit();
+            }
+        }
+
+    </script>
+}
