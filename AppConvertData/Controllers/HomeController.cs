@@ -22,12 +22,14 @@ namespace AppConvertData.Controllers
             _env = env; 
         }
 
+        private string WwwRootPath => Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+        private string OutputFolderPath => Path.Combine(WwwRootPath, "Output");
+        private string ComponentPath => Path.Combine(WwwRootPath, "Component");
+
         public IActionResult Index()
         {
-            var wwwRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            var outputFolderPath = Path.Combine(wwwRootPath, "Output");
 
-            var subfolders = Directory.GetDirectories(outputFolderPath);
+            var subfolders = Directory.GetDirectories(OutputFolderPath);
 
             var allFiles = new List<string>();
 
@@ -41,7 +43,7 @@ namespace AppConvertData.Controllers
                 }
             }
 
-            ViewData["WwwRootPath"] = wwwRootPath;
+            ViewData["WwwRootPath"] = WwwRootPath;
             return View(allFiles);
         }
 
@@ -93,9 +95,8 @@ namespace AppConvertData.Controllers
                     }
                 }
 
-                string templatePath = Path.Combine("wwwroot", "Component", "index.html");
-                string packagesFolder = Path.Combine("wwwroot", "Component", "packages");
-
+                string templatePath = Path.Combine(ComponentPath, "index.html");
+                string packagesFolder = Path.Combine(ComponentPath, "packages");
                 string outputHtmlPath = Path.Combine(outputSubFolderPath, "index.html");
                 string templateContent = System.IO.File.ReadAllText(templatePath);
                 StringBuilder htmlContent = new StringBuilder(templateContent);
@@ -124,20 +125,20 @@ namespace AppConvertData.Controllers
 
         public IActionResult DownloadFile(string subfolderName)
         {
-            var wwwRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            var outputFolderPath = Path.Combine(wwwRootPath, "Output", subfolderName);
 
-            if (Directory.Exists(outputFolderPath))
+            var OutputSubFolderPath = Path.Combine(OutputFolderPath, subfolderName);
+
+            if (Directory.Exists(OutputSubFolderPath))
             {
                 var memoryStream = new MemoryStream();
 
                 using (var zipArchive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
                 {
-                    var filesInSubfolder = Directory.GetFiles(outputFolderPath, "*", System.IO.SearchOption.AllDirectories);
+                    var filesInSubfolder = Directory.GetFiles(OutputSubFolderPath, "*", System.IO.SearchOption.AllDirectories);
 
                     foreach (var filePath in filesInSubfolder)
                     {
-                        var relativePath = Path.GetRelativePath(outputFolderPath, filePath);
+                        var relativePath = Path.GetRelativePath(OutputSubFolderPath, filePath);
                         var entryName = Path.Combine(subfolderName, relativePath.Replace("\\", "/"));
 
                         zipArchive.CreateEntryFromFile(filePath, entryName);
@@ -156,12 +157,12 @@ namespace AppConvertData.Controllers
 
         public IActionResult DeleteFile(string subfolderName)
         {
-            var wwwRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            var outputFolderPath = Path.Combine(wwwRootPath, "Output", subfolderName);
 
-            if (Directory.Exists(outputFolderPath))
+            var OutputSubFolderPath = Path.Combine(OutputFolderPath, subfolderName);
+
+            if (Directory.Exists(OutputSubFolderPath))
             {
-                Directory.Delete(outputFolderPath, true);
+                Directory.Delete(OutputSubFolderPath, true);
                 TempData["Notification"] = "Data berhasil dihapus!!!";
             }
             else
@@ -179,12 +180,11 @@ namespace AppConvertData.Controllers
         {
             try
             {
-                var wwwRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-                var outputFolderPath = Path.Combine(wwwRootPath, "Output", subfolderName);
-                var outputPackageJson = Path.Combine(outputFolderPath, "packages", "regions");
-                var outputPackageVideos = Path.Combine(outputFolderPath, "packages", "videos");
+                var OutputSubFolderPath = Path.Combine(OutputFolderPath, subfolderName);
+                var outputPackageJson = Path.Combine(OutputSubFolderPath, "packages", "regions");
+                var outputPackageVideos = Path.Combine(OutputSubFolderPath, "packages", "videos");
 
-                string jsonTemplatePath = Path.Combine(wwwRootPath, "Component", "packages", "regions", "regions.json");
+                string jsonTemplatePath = Path.Combine(WwwRootPath, "Component", "packages", "regions", "regions.json");
                 string jsonTemplate = System.IO.File.ReadAllText(jsonTemplatePath);
 
                 jsonTemplate = jsonTemplate.Replace("isi disini untuk nilai x", xCoordinate)
@@ -225,19 +225,18 @@ namespace AppConvertData.Controllers
             ViewBag.SuccessMessage = TempData["SuccessMessage"] as string;
             ViewBag.ErrorMessage = TempData["ErrorMessage"] as string;
 
-            var wwwRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            var subfolderPath = Path.Combine(wwwRootPath, "Output", subfolderName, "packages", "pages");
+            var subfolderPath = Path.Combine(WwwRootPath, "Output", subfolderName, "packages", "pages");
             var imagePath = $"~/Output/{subfolderName}/packages/pages/{fileName}";
             ViewBag.ImagePath = imagePath;
 
             var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
 
             ViewData["FileNameWithoutExtension"] = fileNameWithoutExtension;
-            ViewData["WwwRootPath"] = wwwRootPath;
+            ViewData["WwwRootPath"] = WwwRootPath;
             ViewData["SubfolderName"] = subfolderName;
 
-            var regionsFilePath = Path.Combine(wwwRootPath, "Output", subfolderName, "packages", "regions", $"{fileNameWithoutExtension}-regions.json");
-            var videoFilePath = Path.Combine(wwwRootPath, "Output", subfolderName, "packages", "videos", $"{fileNameWithoutExtension}-videos.mp4");
+            var regionsFilePath = Path.Combine(WwwRootPath, "Output", subfolderName, "packages", "regions", $"{fileNameWithoutExtension}-regions.json");
+            var videoFilePath = Path.Combine(WwwRootPath, "Output", subfolderName, "packages", "videos", $"{fileNameWithoutExtension}-videos.mp4");
 
             ViewData["RegionsFilePath"] = System.IO.File.Exists(regionsFilePath) ? regionsFilePath : null;
             ViewData["VideoFilePath"] = System.IO.File.Exists(videoFilePath) ? videoFilePath : null;
@@ -254,10 +253,10 @@ namespace AppConvertData.Controllers
 
         public IActionResult DeleteFiles(string subfolderName, string fileNameWithoutExtension, string deleteOption)
         {
-            var wwwRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            var outputFolderPath = Path.Combine(wwwRootPath, "Output", subfolderName);
-            var regionsFilePath = Path.Combine(outputFolderPath, "packages", "regions", $"{fileNameWithoutExtension}-regions.json");
-            var videoFilePath = Path.Combine(outputFolderPath, "packages", "videos", $"{fileNameWithoutExtension}-videos.mp4");
+
+            var OutputSubFolderPath = Path.Combine(OutputFolderPath, subfolderName);
+            var regionsFilePath = Path.Combine(OutputSubFolderPath, "packages", "regions", $"{fileNameWithoutExtension}-regions.json");
+            var videoFilePath = Path.Combine(OutputSubFolderPath, "packages", "videos", $"{fileNameWithoutExtension}-videos.mp4");
 
             if (deleteOption == "both" || deleteOption == "regions")
             {
