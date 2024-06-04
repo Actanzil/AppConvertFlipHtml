@@ -35,8 +35,6 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 
 app.UseRouting();
-
-// Tambahkan konfigurasi CORS di sini
 app.UseCors(MyAllowSpecificOrigins);
 
 
